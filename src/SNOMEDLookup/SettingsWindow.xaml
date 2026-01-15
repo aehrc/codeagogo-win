@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SNOMED Lookup Settings"
-        Width="420" Height="220"
-        WindowStartupLocation="CenterOwner">
+        Width="420" Height="240"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -12,15 +13,26 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Hotkey" />
+        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Hotkey Configuration" />
 
-        <StackPanel Grid.Row="1" Margin="0,10,0,0">
-            <TextBlock Text="Initial version uses Ctrl+Shift+L. Hotkey picker UI will be added in a follow-up." Foreground="Gray"/>
+        <StackPanel Grid.Row="1" Margin="0,16,0,0">
+            <TextBlock Text="Current Hotkey:" Margin="0,0,0,4"/>
+            <TextBox x:Name="HotkeyTextBox" 
+                     IsReadOnly="True" 
+                     PreviewKeyDown="HotkeyTextBox_PreviewKeyDown"
+                     Background="#F5F5F5"
+                     Padding="8"
+                     FontSize="14"
+                     Text="Press a key combination..."/>
+            <TextBlock Text="Press a key combination (e.g., Ctrl+Shift+L)" 
+                       Foreground="Gray" 
+                       FontSize="11"
+                       Margin="0,4,0,0"/>
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Width="90" Margin="0,0,8,0" Click="Cancel_Click">Cancel</Button>
-            <Button Width="90" Click="Save_Click">Save</Button>
+            <Button x:Name="SaveButton" Width="90" Click="Save_Click">Save</Button>
         </StackPanel>
     </Grid>
 </Window>

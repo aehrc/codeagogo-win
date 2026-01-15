@@ -56,7 +56,7 @@ public sealed class SnowstormClient
         var branch = ms.items != null && ms.items.Length > 0 ? ms.items[0].branch : null;
 
         if (string.IsNullOrWhiteSpace(branch))
-            throw new Exception("Concept not found");
+            throw new ConceptNotFoundException("Concept not found");
 
         return branch!;
     }
@@ -83,21 +83,27 @@ public sealed class SnowstormClient
 
             if (!resp.IsSuccessStatusCode)
             {
-                var snippet = body.Length > 2000 ? body[..2000] + "…" : body;
-                throw new Exception($"HTTP {(int)resp.StatusCode}: {snippet}");
+                // Handle specific HTTP status codes with user-friendly messages
+                throw (int)resp.StatusCode switch
+                {
+                    429 => new RateLimitException("Too many requests. Please wait a moment and try again."),
+                    404 => new ConceptNotFoundException("Concept not found in the terminology server."),
+                    503 => new ApiException("Terminology server is temporarily unavailable. Please try again later."),
+                    _ => new ApiException($"Server error ({(int)resp.StatusCode}). Please try again later.")
+                };
             }
 
-            return JsonSerializer.Deserialize<T>(body, JsonOpts) ?? throw new Exception("Empty response");
+            return JsonSerializer.Deserialize<T>(body, JsonOpts) ?? throw new ApiException("Empty response from server");
         }
         catch (HttpRequestException ex)
         {
             Log.Error($"HttpRequestException url={url} msg={ex.Message}");
-            throw;
+            throw new ApiException("Network error. Please check your internet connection.", ex);
         }
         catch (TaskCanceledException ex)
         {
             Log.Error($"Timeout url={url} msg={ex.Message}");
-            throw;
+            throw new ApiException("Request timed out. Please try again.", ex);
         }
     }
 
@@ -130,4 +136,21 @@ public sealed class SnowstormClient
             public string? lang { get; set; }
         }
     }
+}
+
+// Custom exception types for better error handling
+public class ApiException : Exception
+{
+    public ApiException(string message) : base(message) { }
+    public ApiException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+public class RateLimitException : ApiException
+{
+    public RateLimitException(string message) : base(message) { }
+}
+
+public class ConceptNotFoundException : ApiException
+{
+    public ConceptNotFoundException(string message) : base(message) { }
 }

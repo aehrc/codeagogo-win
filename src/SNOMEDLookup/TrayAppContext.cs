@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.IO;
 
 namespace SNOMEDLookup;
 
@@ -25,7 +26,7 @@ public sealed class TrayAppContext : IDisposable
         };
 
         _hotKey = new HotKeyManager();
-        _hotKey.HotKeyPressed += async (_, __) => await LookupSelectionAsync();
+        _hotKey.HotKeyPressed += async (_, __) => await LookupClipboardAsync();
     }
 
     public void Start()
@@ -38,9 +39,10 @@ public sealed class TrayAppContext : IDisposable
     private ContextMenuStrip BuildMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Lookup selection", null, async (_, __) => await LookupSelectionAsync());
+        menu.Items.Add("Lookup clipboard", null, async (_, __) => await LookupClipboardAsync());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Settings...", null, (_, __) => ShowSettings());
+        menu.Items.Add("View logs...", null, (_, __) => ViewLogs());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Quit", null, (_, __) => Quit());
         return menu;
@@ -63,37 +65,115 @@ public sealed class TrayAppContext : IDisposable
         });
     }
 
-    private async Task LookupSelectionAsync()
+    private async Task LookupClipboardAsync()
     {
+        var mouse = System.Windows.Forms.Control.MousePosition;
+        PopupWindow? loadingWindow = null;
+
         try
         {
-            var mouse = System.Windows.Forms.Control.MousePosition;
-
-            string? raw = await ClipboardSelectionReader.ReadSelectionByCopyingAsync();
-            Log.Info($"Selection raw='{raw ?? ""}'");
+            string? raw = await ClipboardSelectionReader.ReadClipboardAsync();
+            Log.Info($"Clipboard text: '{raw ?? ""}'");
 
             var conceptId = ClipboardSelectionReader.ExtractFirstSnomedId(raw);
             if (string.IsNullOrWhiteSpace(conceptId))
             {
-                PopupWindow.ShowAt(mouse.X, mouse.Y, "Not a SNOMED CT concept ID", "Select a numeric conceptId and try again.");
+                PopupWindow.ShowAt(mouse.X, mouse.Y, 
+                    "No SNOMED CT ID Found", 
+                    "Copy a SNOMED CT concept ID to clipboard first, then press the hotkey.");
                 return;
             }
+
+            // Show loading popup immediately
+            loadingWindow = PopupWindow.ShowAt(mouse.X, mouse.Y, 
+                "Loading...", 
+                $"Looking up concept {conceptId}...", 
+                isLoading: true);
 
             Log.Info($"Lookup conceptId={conceptId}");
             var res = await _client.LookupAsync(conceptId);
 
             var title = res.Pt ?? res.Fsn ?? conceptId;
             var subtitle = $"{res.ConceptId} • {res.ActiveText} • {res.Branch}";
-            PopupWindow.ShowAt(mouse.X, mouse.Y, title, subtitle);
+            
+            // Update the loading window with results
+            loadingWindow.UpdateContent(title, subtitle);
+        }
+        catch (RateLimitException ex)
+        {
+            Log.Error($"Rate limited: {ex.Message}");
+            if (loadingWindow != null)
+            {
+                loadingWindow.UpdateContent("Rate Limit Reached", 
+                    "Too many requests. Please wait a moment and try again.");
+            }
+            else
+            {
+                PopupWindow.ShowAt(mouse.X, mouse.Y,
+                    "Rate Limit Reached",
+                    "Too many requests. Please wait a moment and try again.");
+            }
+        }
+        catch (ConceptNotFoundException ex)
+        {
+            Log.Error($"Concept not found: {ex.Message}");
+            if (loadingWindow != null)
+            {
+                loadingWindow.UpdateContent("Concept Not Found",
+                    "This concept ID was not found in the terminology server.");
+            }
+            else
+            {
+                PopupWindow.ShowAt(mouse.X, mouse.Y,
+                    "Concept Not Found",
+                    "This concept ID was not found in the terminology server.");
+            }
+        }
+        catch (ApiException ex)
+        {
+            Log.Error($"API error: {ex.Message}");
+            if (loadingWindow != null)
+            {
+                loadingWindow.UpdateContent("Lookup Error", ex.Message);
+            }
+            else
+            {
+                PopupWindow.ShowAt(mouse.X, mouse.Y, "Lookup Error", ex.Message);
+            }
         }
         catch (Exception ex)
         {
-            Log.Error($"LookupSelection failed: {ex.GetType().Name}: {ex.Message}");
-            PopupWindow.ShowAt(System.Windows.Forms.Control.MousePosition.X,
-                               System.Windows.Forms.Control.MousePosition.Y,
-                               "Lookup failed",
-                               ex.Message);
+            Log.Error($"LookupClipboard failed: {ex.GetType().Name}: {ex.Message}");
+            if (loadingWindow != null)
+            {
+                loadingWindow.UpdateContent("Lookup Failed",
+                    "An unexpected error occurred. Check logs for details.");
+            }
+            else
+            {
+                PopupWindow.ShowAt(mouse.X, mouse.Y,
+                    "Lookup Failed",
+                    "An unexpected error occurred. Check logs for details.");
+            }
         }
+    }
+
+    private void ViewLogs()
+    {
+        try
+        {
+            var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                       "AEHRC", "SNOMED Lookup", "logs", "app.log");
+            if (File.Exists(logPath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = logPath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch { }
     }
 
     private void Quit()

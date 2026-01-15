@@ -1,0 +1,147 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Window x:Class="Codeagogo.ECLWorkbenchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="ECL Workbench"
+        Width="750" Height="650"
+        MinWidth="450" MinHeight="350"
+        Topmost="True"
+        Icon="Assets/app.ico"
+        Background="#1E1E1E"
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Editor (WebView2) -->
+            <RowDefinition Height="3*" MinHeight="300"/>
+            <!-- Splitter -->
+            <RowDefinition Height="Auto"/>
+            <!-- Results header + list -->
+            <RowDefinition Height="2*" MinHeight="100"/>
+        </Grid.RowDefinitions>
+
+        <!-- ECL Editor (WebView2) -->
+        <wv2:WebView2 x:Name="EditorWebView" Grid.Row="0"/>
+
+        <!-- Grid splitter -->
+        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                      Background="#3D3D3D" Cursor="SizeNS"/>
+
+        <!-- Results section -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Results header bar -->
+            <Border Grid.Row="0" Background="#2D2D2D" Padding="10,6">
+                <DockPanel>
+                    <ToggleButton x:Name="FsnToggle" DockPanel.Dock="Right"
+                                  Content="FSN" Padding="8,2" FontSize="11"
+                                  Foreground="White" Background="#3D3D3D" BorderThickness="0"
+                                  IsChecked="{Binding ShowFsn}"
+                                  ToolTip="Toggle between Preferred Term and Fully Specified Name"/>
+                    <TextBlock x:Name="ResultsHeaderText" Foreground="#AAAAAA" FontSize="12"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- Loading indicator -->
+            <Grid Grid.Row="1" x:Name="LoadingPanel" Visibility="Collapsed">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="4" Margin="0,0,0,8"/>
+                    <TextBlock Text="Evaluating..." FontSize="12" Foreground="#888" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Error display -->
+            <Border Grid.Row="1" x:Name="ErrorPanel" Visibility="Collapsed" Padding="16">
+                <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="#E74C3C" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="400"/>
+            </Border>
+
+            <!-- Results grid (dark theme) -->
+            <DataGrid Grid.Row="1" x:Name="ResultsList" Visibility="Collapsed"
+                      AutoGenerateColumns="False" IsReadOnly="True"
+                      HeadersVisibility="Column" GridLinesVisibility="None"
+                      BorderThickness="0" CanUserReorderColumns="False"
+                      SelectionMode="Single" SelectionUnit="FullRow"
+                      RowHeaderWidth="0" FontSize="12"
+                      Background="#1E1E1E" Foreground="#DDD"
+                      RowBackground="#1E1E1E" AlternatingRowBackground="#252525">
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#2D2D2D"/>
+                        <Setter Property="Foreground" Value="#AAA"/>
+                        <Setter Property="Padding" Value="6,4"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Foreground" Value="#DDD"/>
+                    </Style>
+                </DataGrid.CellStyle>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Code" Width="Auto" MinWidth="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Margin="4,2">
+                                    <Hyperlink Foreground="#5DADE2" Click="ConceptCode_Click">
+                                        <Run Text="{Binding Code, Mode=OneWay}"/>
+                                    </Hyperlink>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Display" Binding="{Binding Display}" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="Margin" Value="4,2"/>
+                                <Setter Property="Foreground" Value="#DDD"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Tag" Binding="{Binding SemanticTag}" Width="Auto" MinWidth="60">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#888"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Margin" Value="4,2"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Header="" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Diagram" Click="DiagramButton_Click"
+                                        Padding="6,1" FontSize="10" HorizontalAlignment="Left"
+                                        Background="#3D3D3D" Foreground="White" BorderThickness="0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Open in Shrimp" Click="ContextShrimp_Click"/>
+                        <MenuItem Header="Show Diagram" Click="ContextDiagram_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Copy Code" Click="ContextCopyCode_Click"/>
+                        <MenuItem Header="Copy Display" Click="ContextCopyDisplay_Click"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+            </DataGrid>
+
+            <!-- Status bar -->
+            <Border Grid.Row="2" Background="#2D2D2D" Padding="10,4">
+                <TextBlock x:Name="StatusText" Foreground="#666" FontSize="11"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

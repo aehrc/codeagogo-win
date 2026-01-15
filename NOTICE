@@ -1,0 +1,51 @@
+Codeagogo (Windows)
+Copyright 2026 Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+
+This product includes software developed by CSIRO's Australian e-Health
+Research Centre (AEHRC).
+
+Licensed under the Apache License, Version 2.0.
+
+Third-party dependencies:
+
+  Microsoft.Web.WebView2 (1.0.3800.47)
+    Copyright (c) Microsoft Corporation
+    Licensed under the MIT License
+    https://github.com/nicknsy/nicknsy/tree/main/nicknsy
+
+  Jint (4.6.4)
+    Copyright (c) Sebastian Ros
+    Licensed under the BSD 2-Clause License
+    https://github.com/sebastienros/jint
+
+  FlaUI (4.0.0)
+    Copyright (c) Roman Baeriswyl
+    Licensed under the MIT License
+    https://github.com/FlaUI/FlaUI
+
+  @aehrc/ecl-core (1.0.1)
+    Copyright (c) CSIRO AEHRC
+    Licensed under the Apache License 2.0
+    https://github.com/aehrc/ecl-core
+
+  @aehrc/ecl-editor (1.0.1)
+    Copyright (c) CSIRO AEHRC
+    Licensed under the Apache License 2.0
+    https://github.com/aehrc/ecl-editor
+
+  Velopack (0.0.1298)
+    Copyright (c) Caelan Sayler
+    Licensed under the MIT License
+    https://github.com/velopack/velopack
+
+  .NET Runtime and SDK
+    Copyright (c) .NET Foundation and Contributors
+    Licensed under the MIT License
+    https://github.com/dotnet/runtime
+
+Test dependencies (not distributed):
+
+  xunit - Apache License 2.0
+  FluentAssertions - Apache License 2.0
+  Moq - BSD 3-Clause License
+  coverlet.collector - MIT License

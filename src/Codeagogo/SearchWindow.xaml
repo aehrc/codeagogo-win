@@ -1,0 +1,89 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Window x:Class="Codeagogo.SearchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Codeagogo"
+        Title="Codeagogo Search"
+        Width="620" Height="460"
+        WindowStyle="ToolWindow"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <local:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
+    </Window.Resources>
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Search Input -->
+        <TextBox x:Name="SearchTextBox"
+                 Grid.Row="0"
+                 Padding="8"
+                 FontSize="14"
+                 TextChanged="SearchTextBox_TextChanged"
+                 ToolTip="Type at least 3 characters to search"/>
+
+        <!-- Filters Row -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <!-- Code System -->
+            <TextBlock Text="System:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox x:Name="CodeSystemCombo"
+                      Width="160"
+                      SelectionChanged="CodeSystemCombo_SelectionChanged"
+                      Margin="0,0,12,0"/>
+
+            <!-- Edition (SNOMED only) -->
+            <TextBlock x:Name="EditionLabel" Text="Edition:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox x:Name="EditionCombo"
+                      Width="140"
+                      SelectionChanged="EditionCombo_SelectionChanged"
+                      Margin="0,0,12,0"/>
+
+            <!-- Format -->
+            <TextBlock Text="Format:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox x:Name="FormatCombo"
+                      Width="100"
+                      SelectionChanged="FormatCombo_SelectionChanged"/>
+        </StackPanel>
+
+        <!-- Results List -->
+        <ListBox x:Name="ResultsList"
+                 Grid.Row="2"
+                 Margin="0,8,0,0"
+                 MouseDoubleClick="ResultsList_MouseDoubleClick"
+                 HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="4,2">
+                        <!-- PT (bold) -->
+                        <TextBlock Text="{Binding Display}" FontWeight="Bold" FontSize="13"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <!-- FSN (gray, only if different from PT) -->
+                        <TextBlock Text="{Binding Fsn}" Foreground="Gray" FontSize="11"
+                                   TextTrimming="CharacterEllipsis"
+                                   Visibility="{Binding Fsn, Converter={StaticResource NullToCollapsedConverter}}"/>
+                        <!-- Code and System -->
+                        <TextBlock FontSize="10" Foreground="#888">
+                            <Run Text="{Binding Code, Mode=OneWay}"/>
+                            <Run Text=" — "/>
+                            <Run Text="{Binding SystemName, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Width="80" Margin="0,0,8,0" Click="Cancel_Click">Cancel</Button>
+            <Button x:Name="InsertButton" Width="80" Click="Insert_Click" IsEnabled="False">Insert</Button>
+        </StackPanel>
+    </Grid>
+</Window>

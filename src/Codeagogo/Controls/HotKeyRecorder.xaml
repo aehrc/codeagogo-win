@@ -1,0 +1,28 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<UserControl x:Class="Codeagogo.Controls.HotKeyRecorder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True">
+    <Border BorderBrush="#666" BorderThickness="1" CornerRadius="3" Padding="4">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="HotkeyText"
+                       Grid.Column="0"
+                       VerticalAlignment="Center"
+                       FontFamily="Segoe UI"
+                       Text="None"/>
+
+            <Button x:Name="RecordButton"
+                    Grid.Column="1"
+                    Content="Record"
+                    Padding="8,2"
+                    Margin="4,0,0,0"
+                    Click="RecordButton_Click"/>
+        </Grid>
+    </Border>
+</UserControl>

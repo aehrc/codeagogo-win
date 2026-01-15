@@ -1,0 +1,28 @@
+#!/bin/bash
+# Pre-push hook: build and test validation
+
+set -e
+
+echo "Running pre-push checks..."
+
+# --- Build ---
+echo "Building solution..."
+if ! dotnet build Codeagogo.sln -c Release --verbosity quiet; then
+  echo ""
+  echo "Pre-push check FAILED: Build errors detected."
+  echo "Fix build errors before pushing."
+  exit 1
+fi
+
+# --- Unit tests (excluding E2E and Integration) ---
+echo "Running unit tests..."
+if ! dotnet test Codeagogo.sln -c Release --no-build --filter "Category!=E2E&Category!=Integration" --verbosity quiet; then
+  echo ""
+  echo "Pre-push check FAILED: Unit test failures detected."
+  echo "Fix failing tests before pushing."
+  exit 1
+fi
+
+echo ""
+echo "Pre-push checks passed."
+exit 0

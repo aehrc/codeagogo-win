@@ -1,0 +1,171 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Window x:Class="Codeagogo.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Codeagogo.Controls"
+        Title="Codeagogo Settings"
+        Width="520" Height="820"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Icon="Assets/app.ico">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="16,16,16,0">
+            <StackPanel>
+                <!-- Lookup Hotkey -->
+                <GroupBox Header="Lookup Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Displays concept details for selected SCTID." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="LookupHotkeyRecorder"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Search Hotkey -->
+                <GroupBox Header="Search Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Opens the SNOMED CT concept search panel." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="SearchHotkeyRecorder"/>
+                        <TextBlock Text="Insert Format:" Margin="0,12,0,4"/>
+                        <ComboBox x:Name="InsertFormatCombo" Width="200" HorizontalAlignment="Left">
+                            <ComboBoxItem Content="ID only" Tag="IdOnly"/>
+                            <ComboBoxItem Content="PT only" Tag="PtOnly"/>
+                            <ComboBoxItem Content="FSN only" Tag="FsnOnly"/>
+                            <ComboBoxItem Content="ID |PT|" Tag="IdPipePT"/>
+                            <ComboBoxItem Content="ID |FSN|" Tag="IdPipeFSN"/>
+                        </ComboBox>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Replace Hotkey -->
+                <GroupBox Header="Replace Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Adds/removes term labels for SCTIDs in selection." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="ReplaceHotkeyRecorder"/>
+                        <TextBlock Text="Term Format:" Margin="0,12,0,4"/>
+                        <ComboBox x:Name="ReplaceTermFormatCombo" Width="200" HorizontalAlignment="Left">
+                            <ComboBoxItem Content="Fully Specified Name (FSN)" Tag="FSN"/>
+                            <ComboBoxItem Content="Preferred Term (PT)" Tag="PT"/>
+                        </ComboBox>
+                        <CheckBox x:Name="PrefixInactiveCheckBox" Content="Prefix inactive concepts with 'INACTIVE'" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- ECL Format Hotkey -->
+                <GroupBox Header="ECL Format Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Toggles ECL between pretty-printed and minified formats." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="EclFormatHotkeyRecorder"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Shrimp Browser Hotkey -->
+                <GroupBox Header="Shrimp Browser Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Opens selected concept in Shrimp terminology browser." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="ShrimpHotkeyRecorder"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- ECL Workbench Hotkey -->
+                <GroupBox Header="ECL Workbench Hotkey" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Opens the ECL editor with live evaluation." Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <controls:HotKeyRecorder x:Name="EvaluateHotkeyRecorder"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- FHIR Endpoint -->
+                <GroupBox Header="FHIR Endpoint" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Base URL:" Margin="0,0,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="FhirBaseUrlTextBox" Grid.Column="0" Padding="6" FontSize="12" TextChanged="FhirBaseUrlTextBox_TextChanged"/>
+                            <Button Grid.Column="1" Content="Reset" Margin="8,0,0,0" Padding="12,4" Click="ResetFhirUrl_Click"/>
+                        </Grid>
+                        <TextBlock Text="FHIR terminology server base URL (e.g., https://tx.ontoserver.csiro.au/fhir)"
+                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="HttpWarningText"
+                                   Text="This endpoint uses unencrypted HTTP. Data sent to this server is not protected in transit."
+                                   Foreground="#CC7700" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Code Systems -->
+                <GroupBox Header="Code Systems" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Configure which code systems are available for lookups and search."
+                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <ListView x:Name="CodeSystemsListView" Height="140" Margin="0,0,0,8">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Enable" Width="55">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Title" Width="140" DisplayMemberBinding="{Binding Title}"/>
+                                    <GridViewColumn Header="URI" Width="240" DisplayMemberBinding="{Binding Uri}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Add from Server" Padding="12,6" Margin="0,0,8,0" Click="RefreshCodeSystems_Click"/>
+                            <Button Content="Reset to Defaults" Padding="12,6" Click="ResetCodeSystems_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Privacy -->
+                <GroupBox Header="Privacy" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Anonymous Install ID" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox x:Name="InstallIdTextBox" IsReadOnly="True" Padding="6" FontSize="12"
+                                 Background="#F5F5F5" Margin="0,0,0,8"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Reset ID" Padding="12,6" Margin="0,0,8,0" Click="ResetInstallId_Click"/>
+                            <Button Content="Show Welcome Screen" Padding="12,6" Click="ShowWelcome_Click"/>
+                        </StackPanel>
+                        <TextBlock Text="A random anonymous ID is included in requests to help count active installations. No personal data is collected."
+                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Startup -->
+                <GroupBox Header="System" Padding="8" Margin="0,0,0,12">
+                    <CheckBox x:Name="StartWithWindowsCheckBox" Content="Start Codeagogo with Windows"/>
+                </GroupBox>
+
+                <!-- Logging -->
+                <GroupBox Header="Logging" Padding="8" Margin="0,0,0,12">
+                    <StackPanel>
+                        <CheckBox x:Name="DebugLoggingCheckBox" Content="Enable debug logging" Margin="0,0,0,8"/>
+                        <TextBlock Text="Debug logging provides detailed information for troubleshooting."
+                                   Foreground="Gray" FontSize="11" Margin="0,0,0,8"/>
+                        <Button x:Name="ExportDiagnosticsButton" Content="Export Diagnostics..."
+                                Click="ExportDiagnostics_Click" HorizontalAlignment="Left" Padding="12,6"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="16,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Width="90" Margin="0,0,8,0" Click="Cancel_Click">Cancel</Button>
+                <Button x:Name="SaveButton" Width="90" Click="Save_Click" IsDefault="True">Save</Button>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

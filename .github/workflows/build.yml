@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore Codeagogo.sln
+
+      - name: Build (Release)
+        run: dotnet build Codeagogo.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Codeagogo.sln -c Release --no-build --filter "Category!=E2E&Category!=Integration"
+
+      - name: Check for vulnerable packages
+        run: dotnet list Codeagogo.sln package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+        continue-on-error: true
+
+      - name: Fail on vulnerable packages
+        shell: pwsh
+        run: |
+          $report = Get-Content vulnerability-report.txt -Raw
+          if ($report -match "has the following vulnerable packages") {
+            Write-Error "Vulnerable NuGet packages detected! Review the output above."
+            exit 1
+          }
+
+      - name: Publish (self-contained)
+        run: dotnet publish src/Codeagogo/Codeagogo.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o out
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path out\* -DestinationPath Codeagogo-win-x64.zip
+
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          $hash = Get-FileHash Codeagogo-win-x64.zip -Algorithm SHA256
+          "$($hash.Hash)  Codeagogo-win-x64.zip" | Out-File checksums-sha256.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codeagogo-win-x64
+          path: Codeagogo-win-x64.zip
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: checksums-sha256.txt

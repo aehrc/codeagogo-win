@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <StartupObject>Codeagogo.App</StartupObject>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors Condition="'$(Configuration)'=='Release'">true</TreatWarningsAsErrors>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <Version>0.1.0</Version>
+
+    <AssemblyName>Codeagogo</AssemblyName>
+    <RootNamespace>Codeagogo</RootNamespace>
+    <Product>Codeagogo</Product>
+    <Description>Clinical terminology lookup utility for Windows</Description>
+    <Company>CSIRO AEHRC</Company>
+    <Copyright>Copyright © CSIRO AEHRC</Copyright>
+
+    <!-- Application icon (taskbar, explorer, exe) -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+
+    <!-- Tray icon uses WinForms NotifyIcon -->
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <!-- Publish: single-file with embedded PDB, bundle everything -->
+    <DebugType>embedded</DebugType>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
+    <PackageReference Include="Jint" Version="4.6.4" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3800.47" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="Velopack" Version="0.0.1298" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Override App.xaml from ApplicationDefinition to Page so we can use a custom Main -->
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\icon-256.png" />
+    <Resource Include="Assets\icon-32.png" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ecl-core-bundle.js" />
+    <EmbeddedResource Include="ecl-editor.standalone.js" />
+  </ItemGroup>
+
+</Project>

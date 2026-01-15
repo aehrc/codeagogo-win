@@ -1,0 +1,90 @@
+# =========================
+# .NET / Visual Studio
+# =========================
+
+## Build results
+bin/
+obj/
+out/
+
+## Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+
+# =========================
+# NuGet
+# =========================
+
+## NuGet packages (restore on build)
+packages/
+*.nupkg
+*.snupkg
+
+# =========================
+# Logs & local data
+# =========================
+
+## Application logs (written to %LOCALAPPDATA%)
+logs/
+*.log
+
+## Local settings (if you ever add per-dev overrides)
+appsettings.Development.json
+
+# =========================
+# Publish / release artefacts
+# =========================
+
+## dotnet publish output
+publish/
+dist/
+
+## Zipped artefacts
+*.zip
+
+# =========================
+# OS files
+# =========================
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## macOS (in case repo touched from mac)
+.DS_Store
+
+# =========================
+# Coverage / tooling
+# =========================
+
+coverage/
+TestResults/
+
+# =========================
+# Certificates / signing
+# =========================
+
+*.pfx
+*.snk
+
+# =========================
+# Internal planning / AI tooling
+# =========================
+
+## OpenSpec planning artifacts (tracked — used for cross-machine change specs)
+openspec/
+
+## Claude Code artifacts (except CLAUDE.md which is checked in)
+.claude/
+scripts/node_modules/

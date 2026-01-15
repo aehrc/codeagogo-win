@@ -1,0 +1,22 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Window x:Class="Codeagogo.ProgressHUD"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        SizeToContent="WidthAndHeight"
+        IsHitTestVisible="False">
+    <Border Background="#E0000000"
+            CornerRadius="8"
+            Padding="16,10">
+        <TextBlock x:Name="MessageText"
+                   Foreground="White"
+                   FontSize="14"
+                   Text="Looking up concepts..."
+                   VerticalAlignment="Center"/>
+    </Border>
+</Window>

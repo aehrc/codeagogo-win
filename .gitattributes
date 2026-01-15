@@ -1,0 +1,29 @@
+# Auto-detect text files and normalise line endings to LF in the repo
+* text=auto eol=lf
+
+# Windows-specific files keep CRLF
+*.sln text eol=crlf
+*.csproj text eol=lf
+
+# Explicitly declare text files
+*.cs text diff=csharp
+*.xaml text
+*.xml text
+*.json text
+*.yml text
+*.yaml text
+*.md text
+*.txt text
+*.editorconfig text
+*.gitignore text
+*.gitattributes text
+*.iss text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.pfx binary

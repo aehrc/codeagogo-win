@@ -1,0 +1,86 @@
+#!/bin/bash
+# Pre-commit hook: secret scanning and code style checks
+
+set -e
+
+ERRORS=0
+
+echo "Running pre-commit checks..."
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "No staged files to check."
+  exit 0
+fi
+
+# --- Secret scanning ---
+echo "Checking for potential secrets..."
+
+SECRET_PATTERNS='password=|secret=|apikey=|api_key=|private_key|-----BEGIN'
+SECRETS_FOUND=""
+
+for file in $STAGED_FILES; do
+  # Skip binary files and this hook itself
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+
+  matches=$(git diff --cached -p "$file" | grep -iE "^\+" | grep -iE "$SECRET_PATTERNS" | grep -v "^+++" || true)
+  if [ -n "$matches" ]; then
+    SECRETS_FOUND="$SECRETS_FOUND\n  $file:\n$matches\n"
+  fi
+done
+
+if [ -n "$SECRETS_FOUND" ]; then
+  echo ""
+  echo "ERROR: Potential secrets detected in staged changes!"
+  echo -e "$SECRETS_FOUND"
+  echo "If these are false positives, use 'git commit --no-verify' to bypass."
+  ERRORS=1
+fi
+
+# --- Sensitive file checks ---
+echo "Checking for sensitive files..."
+
+SENSITIVE_EXTENSIONS='.pfx .p12 .pem .key'
+for file in $STAGED_FILES; do
+  ext=".${file##*.}"
+  for sensitive_ext in $SENSITIVE_EXTENSIONS; do
+    if [ "$ext" = "$sensitive_ext" ]; then
+      echo "WARNING: Sensitive file staged: $file (certificate/key file)"
+      ERRORS=1
+    fi
+  done
+done
+
+# Check for .env files
+for file in $STAGED_FILES; do
+  basename=$(basename "$file")
+  if [[ "$basename" == .env* || "$basename" == *.env ]]; then
+    echo "WARNING: Environment file staged: $file"
+    ERRORS=1
+  fi
+done
+
+# --- dotnet format check ---
+CS_FILES=$(echo "$STAGED_FILES" | grep '\.cs$' || true)
+if [ -n "$CS_FILES" ] && command -v dotnet &> /dev/null; then
+  echo "Checking code formatting on staged .cs files..."
+  if dotnet format --version &> /dev/null 2>&1; then
+    dotnet format Codeagogo.sln --verify-no-changes --verbosity quiet 2>/dev/null || {
+      echo "WARNING: Code formatting issues detected. Run 'dotnet format Codeagogo.sln' to fix."
+      # Format check is a warning, not a blocking error
+    }
+  fi
+fi
+
+echo ""
+if [ $ERRORS -ne 0 ]; then
+  echo "Pre-commit checks FAILED. Please review the issues above."
+  exit 1
+fi
+
+echo "Pre-commit checks passed."
+exit 0

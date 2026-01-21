@@ -20,9 +20,12 @@ public sealed class FhirClient
     private readonly LruCache<string, ConceptResult> _cache;
     private string _baseUrl;
 
+    // SNOMED CT base system URL (always used as the 'system' parameter)
+    private const string SnomedSystemUrl = "http://snomed.info/sct";
+
     // International Edition module ID - tried first
     private const string InternationalModuleId = "900000000000207008";
-    private static readonly string InternationalSystem = $"http://snomed.info/sct/{InternationalModuleId}";
+    private static readonly string InternationalEditionUrl = $"http://snomed.info/sct/{InternationalModuleId}";
 
     // Retry configuration
     private const int MaxRetries = 2; // 3 total attempts
@@ -34,10 +37,41 @@ public sealed class FhirClient
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    // Common editions to prioritize (tried before others in parallel search)
+    private static readonly HashSet<string> PriorityModuleIds = new()
+    {
+        "32506021000036107",  // Australian
+        "929360061000036106", // Australian (alternate)
+        "900062011000036108", // Australian Medicines
+        "731000124108",       // US
+        "83821000000107",     // UK
+        "999000011000000103", // UK Clinical
+        "999000021000000109", // UK Drug
+        "20621000087109",     // Canadian
+        "21000210109",        // New Zealand
+        "11000172109",        // Belgian
+        "11000146104",        // Dutch
+    };
+
     public FhirClient(string? baseUrl = null, HttpClient? http = null)
     {
         _baseUrl = (baseUrl ?? "https://tx.ontoserver.csiro.au/fhir").TrimEnd('/');
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+        if (http != null)
+        {
+            _http = http;
+        }
+        else
+        {
+            // Configure handler with higher connection limit for parallel requests
+            var handler = new SocketsHttpHandler
+            {
+                MaxConnectionsPerServer = 50,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            };
+            _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
+        }
+
         _http.DefaultRequestHeaders.Accept.Clear();
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/fhir+json"));
         _cache = new LruCache<string, ConceptResult>(100, TimeSpan.FromHours(6));
@@ -70,7 +104,7 @@ public sealed class FhirClient
         // Try International Edition first
         try
         {
-            var result = await LookupInSystemAsync(conceptId, InternationalSystem, null, ct);
+            var result = await LookupInEditionAsync(conceptId, InternationalEditionUrl, ct);
             if (result != null)
             {
                 _cache.Set(conceptId, result);
@@ -97,22 +131,25 @@ public sealed class FhirClient
     }
 
     /// <summary>
-    /// Looks up a concept in a specific SNOMED CT system/edition.
+    /// Looks up a concept in a specific SNOMED CT edition.
     /// </summary>
-    private async Task<ConceptResult?> LookupInSystemAsync(string conceptId, string system, string? version, CancellationToken ct)
+    /// <param name="conceptId">The SNOMED CT concept ID to look up.</param>
+    /// <param name="editionUrl">The edition URL (e.g., http://snomed.info/sct/900000000000207008).</param>
+    /// <param name="ct">Cancellation token.</param>
+    private async Task<ConceptResult?> LookupInEditionAsync(string conceptId, string editionUrl, CancellationToken ct)
     {
-        var url = $"{_baseUrl}/CodeSystem/$lookup?system={Uri.EscapeDataString(system)}&code={Uri.EscapeDataString(conceptId)}";
-        if (!string.IsNullOrEmpty(version))
-        {
-            url += $"&version={Uri.EscapeDataString(version)}";
-        }
+        // FHIR $lookup requires:
+        // - system: always http://snomed.info/sct
+        // - version: the edition URL (e.g., http://snomed.info/sct/900000000000207008)
+        // - code: the concept ID
+        var url = $"{_baseUrl}/CodeSystem/$lookup?system={Uri.EscapeDataString(SnomedSystemUrl)}&version={Uri.EscapeDataString(editionUrl)}&code={Uri.EscapeDataString(conceptId)}";
 
         Log.Debug($"FHIR lookup: {url}");
 
         try
         {
             var parameters = await GetJsonWithRetryAsync<FhirParameters>(url, ct);
-            return ParseLookupResponse(conceptId, system, parameters);
+            return ParseLookupResponse(conceptId, editionUrl, parameters);
         }
         catch (ApiException ex) when (ex.Message.Contains("404") || ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
         {
@@ -197,7 +234,10 @@ public sealed class FhirClient
     }
 
     /// <summary>
-    /// Fetches all available SNOMED CT editions from the FHIR server.
+    /// Fetches all unique SNOMED CT editions from the FHIR server.
+    /// The server returns all versions (e.g., http://snomed.info/sct/21000210109/version/20230401)
+    /// but we only need unique edition IDs (e.g., http://snomed.info/sct/21000210109).
+    /// Ontoserver will automatically use the latest version when queried by edition base URL.
     /// </summary>
     private async Task<List<SnomedEdition>> FetchAllEditionsAsync(CancellationToken ct)
     {
@@ -207,52 +247,79 @@ public sealed class FhirClient
         try
         {
             var bundle = await GetJsonWithRetryAsync<FhirBundle>(url, ct);
-            var editions = new List<SnomedEdition>();
+            var editionMap = new Dictionary<string, SnomedEdition>();
 
             foreach (var entry in bundle.Entry ?? Array.Empty<FhirEntry>())
             {
                 var cs = entry.Resource;
-                if (cs?.Url == null) continue;
+                // The version field contains the edition URL like:
+                // http://snomed.info/sct/900000000000207008/version/20230401
+                if (string.IsNullOrEmpty(cs?.Version)) continue;
 
-                editions.Add(new SnomedEdition
+                // Extract edition ID from version URL
+                var editionId = ExtractEditionId(cs.Version);
+                if (string.IsNullOrEmpty(editionId)) continue;
+
+                // Skip International - we query it separately first
+                if (editionId == InternationalModuleId) continue;
+
+                // Use base edition URL (without /version/...) - Ontoserver uses latest version
+                var editionBaseUrl = $"http://snomed.info/sct/{editionId}";
+
+                // Only keep first occurrence (they're usually sorted newest first)
+                if (!editionMap.ContainsKey(editionId))
                 {
-                    System = cs.Url,
-                    Version = cs.Version,
-                    Title = cs.Title ?? cs.Name ?? "Unknown"
-                });
+                    editionMap[editionId] = new SnomedEdition
+                    {
+                        System = editionBaseUrl,
+                        Version = null, // Let server use latest
+                        Title = cs.Title ?? cs.Name ?? EditionNames.GetEditionName(editionId)
+                    };
+                }
             }
 
-            // Ensure International edition is first if present
-            var intl = editions.FirstOrDefault(e => e.System.Contains(InternationalModuleId));
-            if (intl != null)
-            {
-                editions.Remove(intl);
-                editions.Insert(0, intl);
-            }
-
-            Log.Info($"Found {editions.Count} SNOMED CT editions");
+            var editions = editionMap.Values.ToList();
+            Log.Info($"Found {editions.Count} unique SNOMED CT editions (excluding International)");
             return editions;
         }
         catch (Exception ex)
         {
             Log.Error($"Failed to fetch editions: {ex.Message}");
-            // Return at least International edition
-            return new List<SnomedEdition>
-            {
-                new() { System = InternationalSystem, Title = "International" }
-            };
+            // Return empty - International is tried separately
+            return new List<SnomedEdition>();
         }
     }
 
     /// <summary>
+    /// Extracts the edition ID (module ID) from a SNOMED CT system URL.
+    /// </summary>
+    private static string? ExtractEditionId(string systemUrl)
+    {
+        // Format: http://snomed.info/sct/{editionId} or http://snomed.info/sct/{editionId}/version/{date}
+        const string prefix = "http://snomed.info/sct/";
+        if (!systemUrl.StartsWith(prefix)) return null;
+
+        var remainder = systemUrl[prefix.Length..];
+        var slashIndex = remainder.IndexOf('/');
+        return slashIndex > 0 ? remainder[..slashIndex] : remainder;
+    }
+
+    /// <summary>
     /// Searches for a concept across all editions in parallel, returning first match.
+    /// Priority editions (Australian, US, UK, etc.) are started first for faster results.
     /// </summary>
     private async Task<ConceptResult?> LookupInAllEditionsAsync(string conceptId, List<SnomedEdition> editions, CancellationToken ct)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var tasks = new List<Task<ConceptResult?>>();
 
-        foreach (var edition in editions)
+        // Sort editions: priority editions first, then alphabetically
+        var sortedEditions = editions
+            .OrderByDescending(e => IsPriorityEdition(e))
+            .ThenBy(e => e.Title)
+            .ToList();
+
+        foreach (var edition in sortedEditions)
         {
             tasks.Add(LookupInEditionWithCancelAsync(conceptId, edition, cts.Token));
         }
@@ -288,14 +355,25 @@ public sealed class FhirClient
     }
 
     /// <summary>
-    /// Wraps LookupInSystemAsync with cancellation support.
+    /// Checks if an edition is in the priority list (common editions like AU, US, UK).
+    /// </summary>
+    private static bool IsPriorityEdition(SnomedEdition edition)
+    {
+        // Extract module ID from system URL (format: http://snomed.info/sct/MODULE_ID)
+        var parts = edition.System.Split('/');
+        var moduleId = parts.Length > 0 ? parts[^1] : "";
+        return PriorityModuleIds.Contains(moduleId);
+    }
+
+    /// <summary>
+    /// Wraps LookupInEditionAsync with cancellation support.
     /// </summary>
     private async Task<ConceptResult?> LookupInEditionWithCancelAsync(string conceptId, SnomedEdition edition, CancellationToken ct)
     {
         try
         {
             ct.ThrowIfCancellationRequested();
-            return await LookupInSystemAsync(conceptId, edition.System, edition.Version, ct);
+            return await LookupInEditionAsync(conceptId, edition.System, ct);
         }
         catch (ConceptNotFoundException)
         {

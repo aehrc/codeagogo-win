@@ -10,6 +10,12 @@ public sealed class Settings
     public uint HotKeyModifiers { get; set; } = 0x0002 | 0x0004; // MOD_CONTROL | MOD_SHIFT
     public uint HotKeyVirtualKey { get; set; } = 0x4C; // 'L'
 
+    // FHIR endpoint configuration
+    public string FhirBaseUrl { get; set; } = "https://tx.ontoserver.csiro.au/fhir";
+
+    // Debug logging toggle
+    public bool DebugLoggingEnabled { get; set; } = false;
+
     public static Settings Load()
     {
         try

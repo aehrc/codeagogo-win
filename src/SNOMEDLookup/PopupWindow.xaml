@@ -1,17 +1,150 @@
 <Window x:Class="SNOMEDLookup.PopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="420" Height="120"
+        Width="440" Height="280"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
         Topmost="True"
-        ResizeMode="NoResize">
-    <Border CornerRadius="10" Background="#EE1E1E1E" Padding="12">
-        <StackPanel>
-            <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap"/>
-            <TextBlock x:Name="SubtitleText" Margin="0,6,0,0" FontSize="12" Foreground="#DDDDDD" TextWrapping="Wrap"/>
-        </StackPanel>
+        ResizeMode="NoResize"
+        Deactivated="Window_Deactivated">
+    <Border CornerRadius="10" Background="#EE1E1E1E" Padding="14">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Close Button (top right) -->
+            <Button x:Name="CloseButton" Grid.Row="0"
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Width="32" Height="32" Margin="0,-6,-6,0"
+                    Click="CloseButton_Click"
+                    Background="#33FFFFFF" BorderThickness="0"
+                    Cursor="Hand" ToolTip="Close (Esc)">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="16">
+                            <TextBlock Text="X" Foreground="#CCCCCC" FontSize="16"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontWeight="Bold" IsHitTestVisible="False"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#55FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <!-- Loading State -->
+            <StackPanel x:Name="LoadingPanel" Grid.Row="0" Grid.RowSpan="3"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Visibility="Collapsed">
+                <ProgressBar x:Name="LoadingProgress" IsIndeterminate="True"
+                             Width="200" Height="4" Margin="0,0,0,12"/>
+                <TextBlock x:Name="LoadingText" Text="Looking up concept..."
+                           Foreground="#AAAAAA" FontSize="13"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Error State -->
+            <StackPanel x:Name="ErrorPanel" Grid.Row="0" Grid.RowSpan="3"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Visibility="Collapsed">
+                <TextBlock x:Name="ErrorTitle" Text="Error"
+                           Foreground="#FF6B6B" FontSize="16" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock x:Name="ErrorMessage" Text=""
+                           Foreground="#DDDDDD" FontSize="13" TextWrapping="Wrap"
+                           TextAlignment="Center" MaxWidth="380"/>
+            </StackPanel>
+
+            <!-- Result Content -->
+            <StackPanel x:Name="ResultPanel" Grid.Row="0" Visibility="Collapsed">
+                <!-- Concept ID Row -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Concept ID" Foreground="#888888" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConceptIdText" Grid.Column="1" Foreground="White"
+                               FontSize="14" FontWeight="SemiBold" TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <!-- FSN Row -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="FSN" Foreground="#888888" FontSize="11" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="FsnText" Grid.Column="1" Foreground="#E0E0E0"
+                               FontSize="13" TextWrapping="Wrap" MaxHeight="40"
+                               TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <!-- PT Row -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="PT" Foreground="#888888" FontSize="11" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                    <TextBlock x:Name="PtText" Grid.Column="1" Foreground="#E0E0E0"
+                               FontSize="13" TextWrapping="Wrap" MaxHeight="40"
+                               TextTrimming="CharacterEllipsis"/>
+                </Grid>
+
+                <!-- Status Row -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Status" Foreground="#888888" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="StatusText" Grid.Column="1" FontSize="12"/>
+                </Grid>
+
+                <!-- Edition Row -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Edition" Foreground="#888888" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="EditionText" Grid.Column="1" Foreground="#AAAAAA" FontSize="12"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Copy Buttons -->
+            <StackPanel x:Name="CopyButtonsPanel" Grid.Row="2"
+                        Orientation="Horizontal" HorizontalAlignment="Center"
+                        Visibility="Collapsed" Margin="0,8,0,0">
+                <Button x:Name="CopyIdBtn" Content="Copy ID" Width="65" Margin="3,0"
+                        Click="CopyId_Click" FontSize="11" Padding="4,5"/>
+                <Button x:Name="CopyFsnBtn" Content="Copy FSN" Width="70" Margin="3,0"
+                        Click="CopyFsn_Click" FontSize="11" Padding="4,5"/>
+                <Button x:Name="CopyPtBtn" Content="Copy PT" Width="65" Margin="3,0"
+                        Click="CopyPt_Click" FontSize="11" Padding="4,5"/>
+                <Button x:Name="CopyIdFsnBtn" Content="ID &amp; FSN" Width="65" Margin="3,0"
+                        Click="CopyIdFsn_Click" FontSize="11" Padding="4,5"/>
+                <Button x:Name="CopyIdPtBtn" Content="ID &amp; PT" Width="60" Margin="3,0"
+                        Click="CopyIdPt_Click" FontSize="11" Padding="4,5"/>
+            </StackPanel>
+
+            <!-- Simple display fallback (for loading/error titles) -->
+            <StackPanel x:Name="SimplePanel" Visibility="Collapsed">
+                <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold"
+                           Foreground="White" TextWrapping="Wrap"/>
+                <TextBlock x:Name="SubtitleText" Margin="0,6,0,0" FontSize="12"
+                           Foreground="#DDDDDD" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Grid>
     </Border>
 </Window>

@@ -6,6 +6,7 @@ namespace SNOMEDLookup;
 public partial class App : System.Windows.Application
 {
     private Mutex? _mutex;
+    private bool _mutexAcquired;
     private TrayAppContext? _ctx;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -14,6 +15,7 @@ public partial class App : System.Windows.Application
 
         // Single-instance guard
         _mutex = new Mutex(true, @"AEHRC.SNOMEDLookup.Win", out bool createdNew);
+        _mutexAcquired = createdNew;
         if (!createdNew)
         {
             Shutdown();
@@ -32,7 +34,20 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _ctx?.Dispose();
-        _mutex?.ReleaseMutex();
+
+        // Release mutex - catch any synchronization exceptions
+        try
+        {
+            if (_mutexAcquired && _mutex != null)
+            {
+                _mutex.ReleaseMutex();
+            }
+        }
+        catch (System.ApplicationException)
+        {
+            // Mutex was not acquired by this thread - ignore
+        }
+
         _mutex?.Dispose();
 
         Log.Info("App exiting");

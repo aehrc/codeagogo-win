@@ -9,6 +9,17 @@ using System.Windows.Media.Imaging;
 
 namespace SNOMEDLookup;
 
+/// <summary>
+/// Provides methods for reading selected text from applications and extracting SNOMED CT concept IDs.
+/// </summary>
+/// <remarks>
+/// This class implements two strategies for obtaining text:
+/// <list type="number">
+/// <item><description>Selection reading via simulated Ctrl+C - captures currently selected text from any application</description></item>
+/// <item><description>Clipboard reading - reads existing clipboard text as a fallback</description></item>
+/// </list>
+/// The selection reading preserves and restores the original clipboard contents.
+/// </remarks>
 public static class ClipboardSelectionReader
 {
     private static readonly Regex SnomedIdRegex = new(@"\b\d{6,18}\b", RegexOptions.Compiled);
@@ -180,6 +191,10 @@ public static class ClipboardSelectionReader
 
     #endregion
 
+    /// <summary>
+    /// Reads text from the clipboard asynchronously.
+    /// </summary>
+    /// <returns>The clipboard text, or null if clipboard is empty or doesn't contain text.</returns>
     public static async Task<string?> ReadClipboardAsync()
     {
         // Clipboard APIs require STA
@@ -210,6 +225,11 @@ public static class ClipboardSelectionReader
         }
     }
 
+    /// <summary>
+    /// Extracts the first SNOMED CT concept ID from the given text.
+    /// </summary>
+    /// <param name="text">The text to search for concept IDs.</param>
+    /// <returns>The first 6-18 digit number found, or null if none found.</returns>
     public static string? ExtractFirstSnomedId(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;

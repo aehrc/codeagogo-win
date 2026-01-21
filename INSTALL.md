@@ -1,114 +1,195 @@
-# Install (Windows)
+# Installing SNOMED Lookup on Windows
 
-## System Requirements
+SNOMED Lookup is a small Windows utility that lets you look up SNOMED CT concept IDs from anywhere in Windows using a global hotkey.
 
-- Windows 10 or Windows 11
-- Internet connection (for FHIR terminology lookups)
+Because this is an internal tool and is not code-signed, Windows SmartScreen will show a warning the first time you open it. This is expected.
 
-## Quick Start
+---
 
-1. Download the latest `SNOMED.Lookup.zip` from [Releases](https://github.com/aehrc/snomed-lookup-win/releases) or GitHub Actions artifacts.
-2. Extract to a folder (e.g., `C:\Tools\SNOMED Lookup\`).
-3. Run `SNOMED Lookup.exe`.
-4. The app appears as a tray icon in the system notification area.
+## Step-by-step installation
 
-## First Run Notes
+### 1. Download
 
-- **SmartScreen warning**: Windows may show a warning for unsigned binaries. Click "More info" → "Run anyway".
-- **Firewall prompt**: Allow network access for FHIR terminology lookups.
+Download the latest `SNOMED-Lookup-Windows.zip` from the project's **Releases** page or GitHub Actions artifacts.
 
-## Usage
+---
 
-### Basic Lookup
+### 2. Extract and install
 
-1. Select a SNOMED CT concept ID (e.g., `73211009`) in any application.
-2. Press **Ctrl+Shift+L** (default hotkey).
-3. A popup appears near your cursor showing:
-   - Concept ID
-   - Fully Specified Name (FSN)
-   - Preferred Term (PT)
-   - Status (active/inactive)
-   - Edition (International, Australian, US, etc.)
+1. Right-click the downloaded zip file and select **Extract All...**
+2. Choose a destination folder (e.g., `C:\Tools\SNOMED Lookup\`)
+3. Click **Extract**
 
-### Copy Buttons
+---
+
+### 3. Run the app (first run)
+
+When you first try to open the app, Windows SmartScreen may display a warning.
+
+#### Handling SmartScreen
+
+1. Click **More info**
+2. Click **Run anyway**
+
+You only need to do this once.
+
+---
+
+### 4. Verify installation
+
+After launching, you should see:
+- A small icon in the system tray (notification area)
+- Right-click the icon to access Settings and Exit
+
+---
+
+## Using SNOMED Lookup
+
+### Basic lookup
+
+1. Select a SNOMED CT concept ID (e.g., `73211009`) in any application
+2. Press **Ctrl+Shift+L** (default hotkey)
+3. A popup appears near your cursor showing concept details
+
+### Copy buttons
 
 The popup includes five copy buttons:
-- **Copy ID**: Copies just the concept ID
-- **Copy FSN**: Copies the Fully Specified Name
-- **Copy PT**: Copies the Preferred Term
-- **Copy ID & FSN**: Copies formatted as `{id} | {fsn} |`
-- **Copy ID & PT**: Copies formatted as `{id} | {pt} |`
 
-### Dismissing the Popup
+| Button | What it copies |
+|--------|----------------|
+| Copy ID | Just the concept ID |
+| Copy FSN | The Fully Specified Name |
+| Copy PT | The Preferred Term |
+| Copy ID & FSN | Format: `ID \| FSN \|` |
+| Copy ID & PT | Format: `ID \| PT \|` |
+
+### Dismissing the popup
 
 - Press **Escape**
 - Click outside the popup
-- Click the **X** button in the top-right corner
+- Click the **X** button
 
-### Tray Menu
+### Changing the hotkey
 
-Right-click the tray icon for options:
-- **Settings**: Configure hotkey, FHIR endpoint, and logging
-- **Exit**: Close the application
+1. Right-click the tray icon → **Settings**
+2. Click in the hotkey field
+3. Press your desired key combination
+4. Click **Save**
 
-## Settings
+---
 
-Access via tray icon → Settings:
+## Configuration
 
-### Hotkey Configuration
+### Settings location
 
-- Click in the hotkey field
-- Press your desired key combination (e.g., Ctrl+Alt+S)
-- Must include at least one modifier (Ctrl, Shift, Alt, or Win)
+Settings are stored in:
+```
+%LOCALAPPDATA%\AEHRC\SNOMED Lookup\settings.json
+```
 
-### FHIR Endpoint
+### Available settings
 
-- Default: `https://tx.ontoserver.csiro.au/fhir`
-- Can be changed to any FHIR R4 terminology server supporting `$lookup`
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Hotkey | Ctrl+Shift+L | Global keyboard shortcut |
+| FHIR Endpoint | https://tx.ontoserver.csiro.au/fhir | Terminology server URL |
+| Debug Logging | Off | Enable verbose logging |
 
-### Debug Logging
+### FHIR endpoint
 
-- Enable for verbose logging during troubleshooting
-- Logs include API requests, responses, and timing information
+The default endpoint is CSIRO's Ontoserver. You can configure a different FHIR R4 terminology server that supports the `CodeSystem/$lookup` operation.
 
-### Export Diagnostics
+### Debug logging
 
-- Creates a text file with system info and recent logs
-- Useful for reporting issues
+Enable debug logging when troubleshooting issues. Logs include:
+- API request/response details
+- Selection reading operations
+- Cache hits/misses
+- Timing information
 
-## File Locations
+### Export diagnostics
+
+Click **Export Diagnostics** in Settings to create a text file containing:
+- System information (OS, .NET version)
+- Application settings
+- Recent log entries
+
+---
+
+## File locations
 
 | File | Location |
 |------|----------|
+| Application | Where you extracted it |
 | Settings | `%LOCALAPPDATA%\AEHRC\SNOMED Lookup\settings.json` |
 | Logs | `%LOCALAPPDATA%\AEHRC\SNOMED Lookup\logs\app.log` |
 
+---
+
 ## Troubleshooting
 
-### "No SNOMED CT ID found"
+### Nothing happens when I press the hotkey
 
-- Ensure you've selected text containing only digits
-- Try copying the ID to clipboard manually, then press the hotkey
+1. **Check the app is running** — Look for the icon in the system tray
+2. **Check tray overflow** — The icon may be hidden in the overflow area (click the ^ arrow)
+3. **Verify the hotkey** — Open Settings to see the configured hotkey
+4. **Check for conflicts** — Another application may be using the same hotkey
 
-### Popup doesn't appear
+### "No SNOMED CT ID found" message
 
-- Check the tray icon is visible (may be in overflow area)
-- Verify the hotkey isn't used by another application
-- Check logs for errors
+- Ensure you have selected text containing only digits
+- The app expects 6-18 digit SNOMED CT concept IDs
+- Try copying the ID to clipboard manually before pressing the hotkey
 
-### Lookup fails or times out
+### Popup doesn't appear at cursor
 
-- Verify internet connectivity
-- Check if the FHIR endpoint is accessible in a browser
-- Try the default Ontoserver endpoint
+- The popup appears near the cursor position when the hotkey was pressed
+- Some applications may move focus, affecting cursor position
 
-### Hotkey not working
+### Network errors or timeouts
 
-- Some applications may capture hotkeys before Windows
-- Try a different key combination in Settings
+1. **Check internet connectivity**
+2. **Verify FHIR endpoint** — Try the default Ontoserver URL in Settings
+3. **Check firewall** — Ensure the app can make outbound HTTPS connections
+4. **Corporate proxy** — Some networks may block or require proxy configuration
 
-## Uninstall
+### App doesn't start
 
-1. Right-click tray icon → Exit
+1. **Check .NET 8 Runtime** — Self-contained builds include the runtime, but framework-dependent builds require it
+2. **Run as Administrator** — Try right-click → Run as administrator
+3. **Check antivirus** — Some antivirus software may block unsigned executables
+
+### Hotkey stops working
+
+- The hotkey may have been captured by another application
+- Restart SNOMED Lookup to re-register the hotkey
+- Try a different hotkey combination
+
+---
+
+## Running at startup
+
+To start SNOMED Lookup automatically when Windows starts:
+
+1. Press `Win+R`, type `shell:startup`, press Enter
+2. Create a shortcut to `SNOMED Lookup.exe` in this folder
+
+---
+
+## Uninstalling
+
+To remove SNOMED Lookup:
+
+1. Right-click the tray icon → **Exit**
 2. Delete the application folder
-3. Optionally delete settings: `%LOCALAPPDATA%\AEHRC\SNOMED Lookup\`
+3. (Optional) Delete settings and logs:
+   ```
+   %LOCALAPPDATA%\AEHRC\SNOMED Lookup\
+   ```
+4. (Optional) Remove startup shortcut if created
+
+---
+
+## Support
+
+For issues, questions, or feedback, please contact the project maintainers or raise an issue in the GitHub repository.

@@ -7,12 +7,27 @@ using System.IO;
 
 namespace SNOMEDLookup;
 
+/// <summary>
+/// Main application context that manages the system tray icon, hotkey registration,
+/// and coordinates SNOMED CT concept lookups.
+/// </summary>
+/// <remarks>
+/// This class serves as the central coordinator for the application:
+/// - Creates and manages the NotifyIcon in the system tray
+/// - Registers the global hotkey via HotKeyManager
+/// - Handles lookup requests by coordinating between ClipboardSelectionReader and FhirClient
+/// - Manages the popup window lifecycle for displaying results
+/// </remarks>
 public sealed class TrayAppContext : IDisposable
 {
     private readonly NotifyIcon _notify;
     private readonly HotKeyManager _hotKey;
     private readonly FhirClient _client;
+    private PopupWindow? _currentPopup;
 
+    /// <summary>
+    /// Initializes the tray application context with system tray icon and hotkey handler.
+    /// </summary>
     public TrayAppContext()
     {
         var settings = Settings.Load();
@@ -35,6 +50,9 @@ public sealed class TrayAppContext : IDisposable
         _hotKey.HotKeyPressed += async (_, _) => await LookupSelectionAsync();
     }
 
+    /// <summary>
+    /// Starts the application by registering the global hotkey.
+    /// </summary>
     public void Start()
     {
         var s = Settings.Load();
@@ -86,6 +104,9 @@ public sealed class TrayAppContext : IDisposable
         var mouse = System.Windows.Forms.Control.MousePosition;
         PopupWindow? popup = null;
 
+        // Close any existing popup before creating a new one
+        CloseCurrentPopup();
+
         try
         {
             // Try selection reading first (simulates Ctrl+C)
@@ -110,8 +131,9 @@ public sealed class TrayAppContext : IDisposable
                 return;
             }
 
-            // Show loading popup
+            // Show loading popup and track it
             popup = PopupWindow.ShowLoadingAt(mouse.X, mouse.Y, conceptId);
+            _currentPopup = popup;
 
             Log.Info($"Looking up conceptId={conceptId}");
             var result = await _client.LookupAsync(conceptId);
@@ -142,6 +164,22 @@ public sealed class TrayAppContext : IDisposable
             Log.Error($"LookupSelection failed: {ex.GetType().Name}: {ex.Message}");
             ShowError(popup, mouse, "Lookup Failed",
                 "An unexpected error occurred. Check logs for details.");
+        }
+    }
+
+    private void CloseCurrentPopup()
+    {
+        if (_currentPopup != null)
+        {
+            try
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try { _currentPopup.Close(); } catch { }
+                });
+            }
+            catch { }
+            _currentPopup = null;
         }
     }
 

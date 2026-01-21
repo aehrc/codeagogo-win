@@ -92,6 +92,3 @@ Settings are stored in: `%LOCALAPPDATA%\AEHRC\SNOMED Lookup\settings.json`
 - Popup doesn't appear: Check the hotkey isn't conflicting with another application
 - Lookup fails: Verify network connectivity and FHIR endpoint in settings
 
-## License
-
-Apache 2.0

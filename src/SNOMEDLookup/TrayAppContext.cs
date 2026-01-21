@@ -47,7 +47,7 @@ public sealed class TrayAppContext : IDisposable
         };
 
         _hotKey = new HotKeyManager();
-        _hotKey.HotKeyPressed += async (_, _) => await LookupSelectionAsync();
+        _hotKey.HotKeyPressed += async (_, e) => await LookupSelectionAsync(e.ForegroundWindow);
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public sealed class TrayAppContext : IDisposable
     private ContextMenuStrip BuildMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Lookup selection", null, async (_, _) => await LookupSelectionAsync());
+        menu.Items.Add("Lookup clipboard", null, async (_, _) => await LookupClipboardAsync());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Settings...", null, (_, _) => ShowSettings());
         menu.Items.Add("View logs...", null, (_, _) => ViewLogs());
@@ -99,7 +99,7 @@ public sealed class TrayAppContext : IDisposable
         });
     }
 
-    private async Task LookupSelectionAsync()
+    private async Task LookupSelectionAsync(IntPtr targetWindow)
     {
         var mouse = System.Windows.Forms.Control.MousePosition;
         PopupWindow? popup = null;
@@ -109,8 +109,8 @@ public sealed class TrayAppContext : IDisposable
 
         try
         {
-            // Try selection reading first (simulates Ctrl+C)
-            string? text = await ClipboardSelectionReader.ReadSelectionByCopyingAsync();
+            // Try selection reading first (simulates Ctrl+C to the target window)
+            string? text = await ClipboardSelectionReader.ReadSelectionByCopyingAsync(targetWindow);
             Log.Debug($"Selection text: '{Log.Snippet(text, 50)}'");
 
             // Fallback to clipboard if selection was empty
@@ -164,6 +164,48 @@ public sealed class TrayAppContext : IDisposable
             Log.Error($"LookupSelection failed: {ex.GetType().Name}: {ex.Message}");
             ShowError(popup, mouse, "Lookup Failed",
                 "An unexpected error occurred. Check logs for details.");
+        }
+    }
+
+    private async Task LookupClipboardAsync()
+    {
+        var mouse = System.Windows.Forms.Control.MousePosition;
+        PopupWindow? popup = null;
+
+        CloseCurrentPopup();
+
+        try
+        {
+            // Read directly from clipboard (menu item use case)
+            string? text = await ClipboardSelectionReader.ReadClipboardAsync();
+            Log.Debug($"Clipboard text: '{Log.Snippet(text, 50)}'");
+
+            var conceptId = ClipboardSelectionReader.ExtractFirstSnomedId(text);
+            if (string.IsNullOrWhiteSpace(conceptId))
+            {
+                PopupWindow.ShowErrorAt(mouse.X, mouse.Y,
+                    "No SNOMED CT ID Found",
+                    "Copy a SNOMED CT concept ID to clipboard first.");
+                return;
+            }
+
+            popup = PopupWindow.ShowLoadingAt(mouse.X, mouse.Y, conceptId);
+            _currentPopup = popup;
+
+            var result = await _client.LookupAsync(conceptId);
+            popup.ShowResult(result);
+            Log.Info($"Found: {result.Pt ?? result.Fsn ?? conceptId} ({result.Edition})");
+        }
+        catch (ConceptNotFoundException ex)
+        {
+            Log.Error($"Concept not found: {ex.Message}");
+            ShowError(popup, mouse, "Concept Not Found",
+                "This concept ID was not found in any SNOMED CT edition.");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"LookupClipboard failed: {ex.Message}");
+            ShowError(popup, mouse, "Lookup Failed", ex.Message);
         }
     }
 

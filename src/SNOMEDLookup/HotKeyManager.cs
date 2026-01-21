@@ -4,9 +4,25 @@ using System.Windows.Forms;
 
 namespace SNOMEDLookup;
 
+/// <summary>
+/// Event args that include the foreground window handle captured at hotkey press time.
+/// </summary>
+public sealed class HotKeyEventArgs : EventArgs
+{
+    /// <summary>
+    /// The window that had focus when the hotkey was pressed.
+    /// </summary>
+    public IntPtr ForegroundWindow { get; }
+
+    public HotKeyEventArgs(IntPtr foregroundWindow)
+    {
+        ForegroundWindow = foregroundWindow;
+    }
+}
+
 public sealed class HotKeyManager : IDisposable
 {
-    public event EventHandler? HotKeyPressed;
+    public event EventHandler<HotKeyEventArgs>? HotKeyPressed;
 
     private readonly MessageWindow _window;
     private int _currentId = 1;
@@ -39,7 +55,7 @@ public sealed class HotKeyManager : IDisposable
         _window.RegisteredIds.Clear();
     }
 
-    internal void OnHotKey() => HotKeyPressed?.Invoke(this, EventArgs.Empty);
+    internal void OnHotKey(IntPtr foregroundWindow) => HotKeyPressed?.Invoke(this, new HotKeyEventArgs(foregroundWindow));
 
     public void Dispose()
     {
@@ -63,10 +79,15 @@ public sealed class HotKeyManager : IDisposable
             const int WM_HOTKEY = 0x0312;
             if (m.Msg == WM_HOTKEY)
             {
-                _owner.OnHotKey();
+                // Capture foreground window IMMEDIATELY before any other processing
+                var foregroundWindow = GetForegroundWindow();
+                _owner.OnHotKey(foregroundWindow);
             }
             base.WndProc(ref m);
         }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
 
         public void Dispose() => DestroyHandle();
     }

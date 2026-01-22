@@ -107,6 +107,17 @@ public sealed class TrayAppContext : IDisposable
         // Close any existing popup before creating a new one
         CloseCurrentPopup();
 
+        // Try to get selection bounds for intelligent positioning
+        System.Drawing.Rectangle? selectionBounds = null;
+        try
+        {
+            selectionBounds = SelectionPositionHelper.GetSelectionBounds(targetWindow);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"Failed to get selection bounds: {ex.Message}");
+        }
+
         try
         {
             // Try selection reading first (simulates Ctrl+C to the target window)
@@ -127,12 +138,13 @@ public sealed class TrayAppContext : IDisposable
             {
                 PopupWindow.ShowErrorAt(mouse.X, mouse.Y,
                     "No SNOMED CT ID Found",
-                    "Select or copy a SNOMED CT concept ID first, then press the hotkey.");
+                    "Select or copy a SNOMED CT concept ID first, then press the hotkey.",
+                    selectionBounds);
                 return;
             }
 
             // Show loading popup and track it
-            popup = PopupWindow.ShowLoadingAt(mouse.X, mouse.Y, conceptId);
+            popup = PopupWindow.ShowLoadingAt(mouse.X, mouse.Y, conceptId, selectionBounds);
             _currentPopup = popup;
 
             Log.Info($"Looking up conceptId={conceptId}");
@@ -146,24 +158,24 @@ public sealed class TrayAppContext : IDisposable
         {
             Log.Error($"Rate limited: {ex.Message}");
             ShowError(popup, mouse, "Rate Limit Reached",
-                "Too many requests. Please wait a moment and try again.");
+                "Too many requests. Please wait a moment and try again.", selectionBounds);
         }
         catch (ConceptNotFoundException ex)
         {
             Log.Error($"Concept not found: {ex.Message}");
             ShowError(popup, mouse, "Concept Not Found",
-                "This concept ID was not found in any SNOMED CT edition.");
+                "This concept ID was not found in any SNOMED CT edition.", selectionBounds);
         }
         catch (ApiException ex)
         {
             Log.Error($"API error: {ex.Message}");
-            ShowError(popup, mouse, "Lookup Error", ex.Message);
+            ShowError(popup, mouse, "Lookup Error", ex.Message, selectionBounds);
         }
         catch (Exception ex)
         {
             Log.Error($"LookupSelection failed: {ex.GetType().Name}: {ex.Message}");
             ShowError(popup, mouse, "Lookup Failed",
-                "An unexpected error occurred. Check logs for details.");
+                "An unexpected error occurred. Check logs for details.", selectionBounds);
         }
     }
 
@@ -225,7 +237,7 @@ public sealed class TrayAppContext : IDisposable
         }
     }
 
-    private static void ShowError(PopupWindow? existingPopup, System.Drawing.Point mouse, string title, string message)
+    private static void ShowError(PopupWindow? existingPopup, System.Drawing.Point mouse, string title, string message, System.Drawing.Rectangle? selectionBounds = null)
     {
         if (existingPopup != null)
         {
@@ -233,7 +245,7 @@ public sealed class TrayAppContext : IDisposable
         }
         else
         {
-            PopupWindow.ShowErrorAt(mouse.X, mouse.Y, title, message);
+            PopupWindow.ShowErrorAt(mouse.X, mouse.Y, title, message, selectionBounds);
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
@@ -210,16 +211,20 @@ public partial class PopupWindow : Window
     #region Factory Methods
 
     /// <summary>
-    /// Creates and shows a popup in loading state at the specified position.
+    /// Creates and shows a popup in loading state, positioned near the selected text or mouse cursor.
     /// </summary>
-    public static PopupWindow ShowLoadingAt(int screenX, int screenY, string conceptId)
+    /// <param name="screenX">Mouse X position (fallback if selection bounds unavailable).</param>
+    /// <param name="screenY">Mouse Y position (fallback if selection bounds unavailable).</param>
+    /// <param name="conceptId">The concept ID being looked up.</param>
+    /// <param name="selectionBounds">Optional bounding rectangle of the selected text.</param>
+    public static PopupWindow ShowLoadingAt(int screenX, int screenY, string conceptId, Rectangle? selectionBounds = null)
     {
         PopupWindow? window = null;
 
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             window = new PopupWindow();
-            PositionWindow(window, screenX, screenY);
+            PositionWindow(window, screenX, screenY, selectionBounds);
             window.ShowLoading(conceptId);
             window.Show();
         });
@@ -228,16 +233,21 @@ public partial class PopupWindow : Window
     }
 
     /// <summary>
-    /// Creates and shows a popup with an error at the specified position.
+    /// Creates and shows a popup with an error, positioned near the selected text or mouse cursor.
     /// </summary>
-    public static PopupWindow ShowErrorAt(int screenX, int screenY, string title, string message)
+    /// <param name="screenX">Mouse X position (fallback if selection bounds unavailable).</param>
+    /// <param name="screenY">Mouse Y position (fallback if selection bounds unavailable).</param>
+    /// <param name="title">Error title.</param>
+    /// <param name="message">Error message.</param>
+    /// <param name="selectionBounds">Optional bounding rectangle of the selected text.</param>
+    public static PopupWindow ShowErrorAt(int screenX, int screenY, string title, string message, Rectangle? selectionBounds = null)
     {
         PopupWindow? window = null;
 
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             window = new PopupWindow();
-            PositionWindow(window, screenX, screenY);
+            PositionWindow(window, screenX, screenY, selectionBounds);
             window.ShowError(title, message);
             window.Show();
         });
@@ -248,14 +258,14 @@ public partial class PopupWindow : Window
     /// <summary>
     /// Legacy factory method for backward compatibility.
     /// </summary>
-    public static PopupWindow ShowAt(int screenX, int screenY, string title, string subtitle, bool isLoading = false)
+    public static PopupWindow ShowAt(int screenX, int screenY, string title, string subtitle, bool isLoading = false, Rectangle? selectionBounds = null)
     {
         PopupWindow? window = null;
 
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             window = new PopupWindow();
-            PositionWindow(window, screenX, screenY);
+            PositionWindow(window, screenX, screenY, selectionBounds);
 
             // Use simple panel for legacy display
             window.HideAllPanels();
@@ -274,46 +284,41 @@ public partial class PopupWindow : Window
         return window!;
     }
 
-    private static void PositionWindow(PopupWindow window, int screenX, int screenY)
+    /// <summary>
+    /// Positions the window intelligently based on selection bounds or mouse position.
+    /// Priority: 1) Near selected text 2) Near mouse cursor 3) Clamped to screen bounds
+    /// </summary>
+    private static void PositionWindow(PopupWindow window, int screenX, int screenY, Rectangle? selectionBounds = null)
     {
-        // Calculate desired position
-        double desiredLeft = screenX + 12;
-        double desiredTop = screenY + 12;
-
-        // Get the screen bounds where the cursor is
-        var screen = Screen.FromPoint(new System.Drawing.Point(screenX, screenY));
-        double screenLeft = screen.WorkingArea.Left;
-        double screenTop = screen.WorkingArea.Top;
-        double screenRight = screen.WorkingArea.Right;
-        double screenBottom = screen.WorkingArea.Bottom;
-
         // Ensure window is measured so we know its size
         window.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
         double windowWidth = window.DesiredSize.Width;
         double windowHeight = window.DesiredSize.Height;
 
-        // Adjust horizontal position if it would go off-screen
-        if (desiredLeft + windowWidth > screenRight)
-        {
-            desiredLeft = screenRight - windowWidth - 12;
-        }
-        if (desiredLeft < screenLeft)
-        {
-            desiredLeft = screenLeft + 12;
-        }
+        // Get the screen bounds where the cursor is (or selection is)
+        var referencePoint = selectionBounds.HasValue
+            ? new System.Drawing.Point(selectionBounds.Value.X, selectionBounds.Value.Y)
+            : new System.Drawing.Point(screenX, screenY);
+        var screen = Screen.FromPoint(referencePoint);
+        var screenBounds = new Rectangle(
+            screen.WorkingArea.Left,
+            screen.WorkingArea.Top,
+            screen.WorkingArea.Width,
+            screen.WorkingArea.Height
+        );
 
-        // Adjust vertical position if it would go off-screen
-        if (desiredTop + windowHeight > screenBottom)
-        {
-            desiredTop = screenBottom - windowHeight - 12;
-        }
-        if (desiredTop < screenTop)
-        {
-            desiredTop = screenTop + 12;
-        }
+        // Calculate optimal position using the helper
+        var mousePosition = new System.Drawing.Point(screenX, screenY);
+        var position = SelectionPositionHelper.CalculatePopupPosition(
+            selectionBounds,
+            mousePosition,
+            windowWidth,
+            windowHeight,
+            screenBounds
+        );
 
-        window.Left = desiredLeft;
-        window.Top = desiredTop;
+        window.Left = position.X;
+        window.Top = position.Y;
     }
 
     #endregion

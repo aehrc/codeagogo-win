@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-31
+
 ### Features
 - **Concept Lookup** (`Ctrl+Shift+L`) -- Look up SNOMED CT, LOINC, ICD-10, and RxNorm concepts from any application
 - **Concept Search** (`Ctrl+Shift+S`) -- Term-based search via FHIR `ValueSet/$expand` with debounced input and edition filtering

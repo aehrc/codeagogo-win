@@ -127,23 +127,49 @@ public sealed class TrayAppContext : IDisposable
 
     private ContextMenuStrip BuildMenu()
     {
+        var s = Settings.Load();
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Lookup selection", null, async (_, _) => await LookupSelectionAsync());
-        menu.Items.Add("Search concepts", null, (_, _) => ShowSearchPanelAsync());
-        menu.Items.Add("Replace selection", null, async (_, _) => await ReplaceSelectionAsync());
+        menu.Items.Add($"Lookup selection\t{FormatHotkey(s.LookupHotKeyModifiers, s.LookupHotKeyVirtualKey)}", null, async (_, _) => await LookupSelectionAsync());
+        menu.Items.Add($"Search concepts\t{FormatHotkey(s.SearchHotKeyModifiers, s.SearchHotKeyVirtualKey)}", null, (_, _) => ShowSearchPanelAsync());
+        menu.Items.Add($"Replace selection\t{FormatHotkey(s.ReplaceHotKeyModifiers, s.ReplaceHotKeyVirtualKey)}", null, async (_, _) => await ReplaceSelectionAsync());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Format ECL", null, async (_, _) => await FormatECLSelectionAsync());
-        menu.Items.Add("Evaluate ECL", null, async (_, _) => await EvaluateEclSelectionAsync());
+        menu.Items.Add($"Format ECL\t{FormatHotkey(s.EclFormatHotKeyModifiers, s.EclFormatHotKeyVirtualKey)}", null, async (_, _) => await FormatECLSelectionAsync());
+        menu.Items.Add($"Evaluate ECL\t{FormatHotkey(s.EvaluateHotKeyModifiers, s.EvaluateHotKeyVirtualKey)}", null, async (_, _) => await EvaluateEclSelectionAsync());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("ECL Reference...", null, (_, _) => ShowECLReferencePanel());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Settings...", null, (_, _) => ShowSettings());
         menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesManualAsync());
         menu.Items.Add("View logs...", null, (_, _) => ViewLogs());
+        menu.Items.Add($"Open in Shrimp\t{FormatHotkey(s.ShrimpHotKeyModifiers, s.ShrimpHotKeyVirtualKey)}", null, async (_, _) => await OpenInShrimpAsync());
         menu.Items.Add("About Codeagogo", null, (_, _) => ShowAbout());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Quit", null, (_, _) => Quit());
         return menu;
+    }
+
+    /// <summary>
+    /// Formats Win32 hotkey modifiers and virtual key code into a readable string (e.g., "Ctrl+Shift+L").
+    /// </summary>
+    private static string FormatHotkey(uint modifiers, uint virtualKey)
+    {
+        var parts = new List<string>();
+        if ((modifiers & 0x0002) != 0) parts.Add("Ctrl");
+        if ((modifiers & 0x0001) != 0) parts.Add("Alt");
+        if ((modifiers & 0x0004) != 0) parts.Add("Shift");
+        if ((modifiers & 0x0008) != 0) parts.Add("Win");
+
+        // Convert virtual key code to readable name
+        var keyName = virtualKey switch
+        {
+            >= 0x30 and <= 0x39 => ((char)virtualKey).ToString(), // 0-9
+            >= 0x41 and <= 0x5A => ((char)virtualKey).ToString(), // A-Z
+            >= 0x70 and <= 0x87 => $"F{virtualKey - 0x6F}",      // F1-F24
+            _ => $"0x{virtualKey:X2}"
+        };
+
+        parts.Add(keyName);
+        return string.Join("+", parts);
     }
 
     private void ShowSettings()
@@ -226,6 +252,9 @@ public sealed class TrayAppContext : IDisposable
             {
                 Log.Error($"Failed to re-register evaluate hotkey: {ex.Message}");
             }
+
+            // Rebuild menu to reflect updated hotkey shortcuts
+            _notify.ContextMenuStrip = BuildMenu();
         });
     }
 

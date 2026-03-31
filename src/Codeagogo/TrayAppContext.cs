@@ -233,12 +233,12 @@ public sealed class TrayAppContext : IDisposable
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
-            var version = typeof(TrayAppContext).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
-            System.Windows.MessageBox.Show(
-                $"Codeagogo v{version}\n\nClinical terminology lookup utility\n\nDeveloped by CSIRO AEHRC",
-                "About Codeagogo",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            var win = new AboutWindow
+            {
+                Owner = null,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            win.ShowDialog();
         });
     }
 

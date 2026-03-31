@@ -1,0 +1,66 @@
+<!-- Copyright 2026 CSIRO. Licensed under the Apache License, Version 2.0. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Window x:Class="Codeagogo.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Codeagogo"
+        Width="420" Height="380"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Icon="Assets/app.ico"
+        Background="White">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Logo and title -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+            <Border Width="64" Height="64" CornerRadius="12" ClipToBounds="True" Margin="0,0,0,12">
+                <Image Source="Assets/icon-256.png" Width="64" Height="64"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Border>
+            <TextBlock Text="Codeagogo" FontSize="22" FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock x:Name="VersionText" FontSize="13" Foreground="#666"
+                       HorizontalAlignment="Center" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" TextAlignment="Center"
+                   FontSize="12" Foreground="#444" Margin="0,0,0,16">
+            Clinical terminology lookup utility for Windows.
+            <LineBreak/>
+            Look up SNOMED CT, LOINC, ICD-10, and RxNorm codes
+            instantly from any application using global hotkeys.
+        </TextBlock>
+
+        <!-- Links -->
+        <StackPanel Grid.Row="2" VerticalAlignment="Top">
+            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,6">
+                <Hyperlink Click="GitHub_Click">GitHub Repository</Hyperlink>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,6">
+                <Hyperlink Click="Issues_Click">Report an Issue</Hyperlink>
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,6">
+                <Hyperlink Click="License_Click">Apache License 2.0</Hyperlink>
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="3">
+            <TextBlock Text="Developed by CSIRO's Australian e-Health Research Centre (AEHRC)"
+                       FontSize="11" Foreground="#999" TextAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,0,4"/>
+            <TextBlock Text="Copyright 2026 Commonwealth Scientific and Industrial Research Organisation"
+                       FontSize="10" Foreground="#BBB" TextAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,0,12"/>
+            <Button Content="OK" Click="OK_Click" HorizontalAlignment="Center"
+                    Width="80" Height="28" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

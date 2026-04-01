@@ -5,7 +5,7 @@
     "@aehrc/ecl-core": "^1.0.1",
     "@aehrc/ecl-editor": "^1.0.1",
     "assert": "^2.1.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.27.4",
     "util": "^0.12.5"
   }
 }

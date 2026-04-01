@@ -108,7 +108,7 @@ public partial class App : System.Windows.Application
     {
         try
         {
-            var mgr = new UpdateManager("https://github.com/aehrc/codeagogo-win/releases");
+            var mgr = new UpdateManager(new Velopack.Sources.GithubSource("https://github.com/aehrc/codeagogo-win", null, false));
 
             var update = await mgr.CheckForUpdatesAsync();
             if (update == null)

@@ -1075,7 +1075,7 @@ public sealed class TrayAppContext : IDisposable
     {
         try
         {
-            var mgr = new Velopack.UpdateManager("https://github.com/aehrc/codeagogo-win/releases");
+            var mgr = new Velopack.UpdateManager(new Velopack.Sources.GithubSource("https://github.com/aehrc/codeagogo-win", null, false));
             var update = await mgr.CheckForUpdatesAsync();
 
             if (update == null)

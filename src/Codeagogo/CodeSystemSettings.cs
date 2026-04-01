@@ -13,10 +13,10 @@ public sealed class CodeSystemSettings
 {
     public List<ConfiguredCodeSystem> Systems { get; set; } = new()
     {
-        new ConfiguredCodeSystem("http://snomed.info/sct", "SNOMED CT", true),
-        new ConfiguredCodeSystem("http://loinc.org", "LOINC", false),
-        new ConfiguredCodeSystem("http://hl7.org/fhir/sid/icd-10", "ICD-10", false),
-        new ConfiguredCodeSystem("http://www.nlm.nih.gov/research/umls/rxnorm", "RxNorm", false)
+        // Minimal default — SNOMED CT is always available.
+        // On first launch, PopulateFromServerAsync replaces this with
+        // the actual code systems available on the configured FHIR server.
+        new ConfiguredCodeSystem("http://snomed.info/sct", "SNOMED CT", true)
     };
 
     /// <summary>
@@ -56,6 +56,40 @@ public sealed class CodeSystemSettings
         {
             Log.Error($"Failed to load code system settings: {ex.Message}");
             return new CodeSystemSettings();
+        }
+    }
+
+    /// <summary>
+    /// Populates the code system list from the FHIR terminology server.
+    /// Called on first launch when no config file exists. SNOMED CT is always enabled;
+    /// other systems are added but disabled by default.
+    /// </summary>
+    public static async Task PopulateFromServerAsync(OntoserverClient client)
+    {
+        try
+        {
+            var path = PathToCodeSystems();
+            if (File.Exists(path)) return; // Already configured
+
+            var available = await client.GetAvailableCodeSystemsAsync();
+            if (available.Count == 0) return;
+
+            var settings = new CodeSystemSettings
+            {
+                Systems = available
+                    .Select(cs => new ConfiguredCodeSystem(
+                        cs.Uri,
+                        cs.Title,
+                        cs.Uri == "http://snomed.info/sct" || cs.Uri == "http://loinc.org"))
+                    .ToList()
+            };
+
+            settings.Save();
+            Log.Info($"Populated {settings.Systems.Count} code systems from server");
+        }
+        catch (Exception ex)
+        {
+            Log.Debug($"Failed to populate code systems from server: {ex.Message}");
         }
     }
 

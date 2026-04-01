@@ -90,6 +90,10 @@ public partial class App : System.Windows.Application
             welcome.Show();
         }
 
+        // Populate code systems from server on first launch (non-blocking)
+        _ = CodeSystemSettings.PopulateFromServerAsync(
+            new OntoserverClient(baseUrl: settings.FhirBaseUrl));
+
         // Check for updates on startup and every 24 hours
         _ = CheckForUpdatesAsync();
         var updateTimer = new System.Windows.Threading.DispatcherTimer

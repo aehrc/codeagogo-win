@@ -88,3 +88,5 @@ openspec/
 ## Claude Code artifacts (except CLAUDE.md which is checked in)
 .claude/
 scripts/node_modules/
+test-publish/
+test-releases/

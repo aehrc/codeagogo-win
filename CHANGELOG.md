@@ -7,12 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ## [1.0.3] - 2026-04-01
+- Italic grey shortcut keys in tray menu
+- Right-aligned hotkey shortcuts in tray menu
+- Proper About window with logo, version, and links
 
 ## [1.0.2] - 2026-04-01
+- Fixed Velopack update source (use GithubSource)
+- Signed Velopack installer in release workflow
 
 ## [1.0.1] - 2026-03-31
-
-## [1.0.0] - 2026-03-31
+- Fixed vulnerable System.Drawing.Common dependency
 
 ## [1.0.0] - 2026-03-31
 

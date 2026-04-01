@@ -113,6 +113,7 @@ public class AppLaunchTests : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (_app != null && !_app.HasExited)
         {
             _app.Kill();

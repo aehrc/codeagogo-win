@@ -60,7 +60,7 @@ public class OntoserverClientTests
         versionParam!.ValueString.Should().Be("http://snomed.info/sct/900000000000207008/version/20240101");
 
         // Check display parameter
-        var displayParam = parameters.Parameter.FirstOrDefault(p => p.Name == "display");
+        var displayParam = parameters.Parameter!.FirstOrDefault(p => p.Name == "display");
         displayParam.Should().NotBeNull();
         displayParam!.ValueString.Should().Be("Diabetes mellitus");
     }
@@ -709,7 +709,7 @@ public class OntoserverClientTests
         displayParam!.ValueString.Should().Be("Heart rate");
 
         // Check version parameter
-        var versionParam = parameters.Parameter.FirstOrDefault(p => p.Name == "version");
+        var versionParam = parameters.Parameter!.FirstOrDefault(p => p.Name == "version");
         versionParam!.ValueString.Should().Be("2.74");
     }
 

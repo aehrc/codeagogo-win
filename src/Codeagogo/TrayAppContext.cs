@@ -1138,11 +1138,11 @@ public sealed class TrayAppContext : IDisposable
         // Add "Restart to Update" menu item at the top
         var updateItem = new ToolStripMenuItem($"Restart to Update ({version})")
         {
-            Font = new System.Drawing.Font(_notify.ContextMenuStrip!.Font, System.Drawing.FontStyle.Bold)
+            Font = new System.Drawing.Font(_notify.ContextMenuStrip?.Font ?? System.Drawing.SystemFonts.MenuFont!, System.Drawing.FontStyle.Bold)
         };
         updateItem.Click += (_, _) => applyUpdate();
-        _notify.ContextMenuStrip.Items.Insert(0, updateItem);
-        _notify.ContextMenuStrip.Items.Insert(1, new ToolStripSeparator());
+        _notify.ContextMenuStrip!.Items.Insert(0, updateItem);
+        _notify.ContextMenuStrip!.Items.Insert(1, new ToolStripSeparator());
 
         Log.Info($"Update {version} ready — user notified");
     }
@@ -1206,7 +1206,7 @@ internal sealed class ShortcutMenuRenderer : ToolStripProfessionalRenderer
         if (e.Item is ToolStripMenuItem menuItem && !string.IsNullOrEmpty(menuItem.ShortcutKeyDisplayString)
             && e.Text == menuItem.ShortcutKeyDisplayString)
         {
-            using var font = new System.Drawing.Font(e.TextFont, System.Drawing.FontStyle.Italic);
+            using var font = new System.Drawing.Font(e.TextFont ?? System.Drawing.SystemFonts.MenuFont!, System.Drawing.FontStyle.Italic);
             e.TextColor = System.Drawing.Color.Gray;
             e.TextFont = font;
         }

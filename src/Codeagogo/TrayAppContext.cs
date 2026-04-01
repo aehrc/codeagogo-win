@@ -128,7 +128,8 @@ public sealed class TrayAppContext : IDisposable
     private ContextMenuStrip BuildMenu()
     {
         var s = Settings.Load();
-        var menu = new ContextMenuStrip { ShowImageMargin = false };
+        var menu = new ContextMenuStrip { ShowImageMargin = false, ShowCheckMargin = false };
+        menu.Renderer = new ShortcutMenuRenderer();
 
         AddMenuItem(menu, "Lookup selection", s.LookupHotKeyModifiers, s.LookupHotKeyVirtualKey, async (_, _) => await LookupSelectionAsync());
         AddMenuItem(menu, "Search concepts", s.SearchHotKeyModifiers, s.SearchHotKeyVirtualKey, (_, _) => ShowSearchPanelAsync());
@@ -1193,4 +1194,23 @@ public sealed class TrayAppContext : IDisposable
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
+}
+
+/// <summary>
+/// Custom menu renderer that draws shortcut key text in italic grey.
+/// </summary>
+internal sealed class ShortcutMenuRenderer : ToolStripProfessionalRenderer
+{
+    protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+    {
+        if (e.Item is ToolStripMenuItem menuItem && !string.IsNullOrEmpty(menuItem.ShortcutKeyDisplayString)
+            && e.Text == menuItem.ShortcutKeyDisplayString)
+        {
+            using var font = new System.Drawing.Font(e.TextFont, System.Drawing.FontStyle.Italic);
+            e.TextColor = System.Drawing.Color.Gray;
+            e.TextFont = font;
+        }
+
+        base.OnRenderItemText(e);
+    }
 }

@@ -128,24 +128,36 @@ public sealed class TrayAppContext : IDisposable
     private ContextMenuStrip BuildMenu()
     {
         var s = Settings.Load();
-        var menu = new ContextMenuStrip();
-        menu.Items.Add($"Lookup selection\t{FormatHotkey(s.LookupHotKeyModifiers, s.LookupHotKeyVirtualKey)}", null, async (_, _) => await LookupSelectionAsync());
-        menu.Items.Add($"Search concepts\t{FormatHotkey(s.SearchHotKeyModifiers, s.SearchHotKeyVirtualKey)}", null, (_, _) => ShowSearchPanelAsync());
-        menu.Items.Add($"Replace selection\t{FormatHotkey(s.ReplaceHotKeyModifiers, s.ReplaceHotKeyVirtualKey)}", null, async (_, _) => await ReplaceSelectionAsync());
+        var menu = new ContextMenuStrip { ShowImageMargin = false };
+
+        AddMenuItem(menu, "Lookup selection", s.LookupHotKeyModifiers, s.LookupHotKeyVirtualKey, async (_, _) => await LookupSelectionAsync());
+        AddMenuItem(menu, "Search concepts", s.SearchHotKeyModifiers, s.SearchHotKeyVirtualKey, (_, _) => ShowSearchPanelAsync());
+        AddMenuItem(menu, "Replace selection", s.ReplaceHotKeyModifiers, s.ReplaceHotKeyVirtualKey, async (_, _) => await ReplaceSelectionAsync());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add($"Format ECL\t{FormatHotkey(s.EclFormatHotKeyModifiers, s.EclFormatHotKeyVirtualKey)}", null, async (_, _) => await FormatECLSelectionAsync());
-        menu.Items.Add($"Evaluate ECL\t{FormatHotkey(s.EvaluateHotKeyModifiers, s.EvaluateHotKeyVirtualKey)}", null, async (_, _) => await EvaluateEclSelectionAsync());
+        AddMenuItem(menu, "Format ECL", s.EclFormatHotKeyModifiers, s.EclFormatHotKeyVirtualKey, async (_, _) => await FormatECLSelectionAsync());
+        AddMenuItem(menu, "Evaluate ECL", s.EvaluateHotKeyModifiers, s.EvaluateHotKeyVirtualKey, async (_, _) => await EvaluateEclSelectionAsync());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("ECL Reference...", null, (_, _) => ShowECLReferencePanel());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Settings...", null, (_, _) => ShowSettings());
         menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesManualAsync());
         menu.Items.Add("View logs...", null, (_, _) => ViewLogs());
-        menu.Items.Add($"Open in Shrimp\t{FormatHotkey(s.ShrimpHotKeyModifiers, s.ShrimpHotKeyVirtualKey)}", null, async (_, _) => await OpenInShrimpAsync());
+        AddMenuItem(menu, "Open in Shrimp", s.ShrimpHotKeyModifiers, s.ShrimpHotKeyVirtualKey, async (_, _) => await OpenInShrimpAsync());
         menu.Items.Add("About Codeagogo", null, (_, _) => ShowAbout());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Quit", null, (_, _) => Quit());
         return menu;
+    }
+
+    /// <summary>
+    /// Adds a menu item with a right-aligned shortcut key display string.
+    /// </summary>
+    private static void AddMenuItem(ContextMenuStrip menu, string text, uint modifiers, uint virtualKey, EventHandler handler)
+    {
+        var item = new ToolStripMenuItem(text);
+        item.ShortcutKeyDisplayString = FormatHotkey(modifiers, virtualKey);
+        item.Click += handler;
+        menu.Items.Add(item);
     }
 
     /// <summary>

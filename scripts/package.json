@@ -3,7 +3,7 @@
   "description": "Build dependencies for bundling ecl-core into JavaScriptCore",
   "dependencies": {
     "@aehrc/ecl-core": "^1.0.1",
-    "@aehrc/ecl-editor": "^1.0.1",
+    "@aehrc/ecl-editor": "^1.0.4",
     "assert": "^2.1.0",
     "esbuild": "^0.25.0",
     "util": "^0.12.5"

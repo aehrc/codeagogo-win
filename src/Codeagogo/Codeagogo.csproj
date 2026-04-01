@@ -55,6 +55,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
     <EmbeddedResource Include="ecl-core-bundle.js" />
     <EmbeddedResource Include="ecl-editor.standalone.js" />
   </ItemGroup>

@@ -38,7 +38,7 @@
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
     <PackageReference Include="Jint" Version="4.6.4" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3800.47" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
     <PackageReference Include="Velopack" Version="0.0.1298" />
   </ItemGroup>
 

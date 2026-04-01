@@ -195,11 +195,16 @@ public sealed class TrayAppContext : IDisposable
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
 
-            // Handle FHIR URL changes
+            // Handle FHIR URL changes — re-fetch code systems from new server
             win.FhirUrlChanged += url =>
             {
                 _client.SetBaseUrl(url);
                 Log.Info($"FHIR endpoint changed to: {url}");
+
+                // Delete cached code systems so they're re-fetched from the new server
+                try { System.IO.File.Delete(CodeSystemSettings.PathToCodeSystems()); }
+                catch { }
+                _ = CodeSystemSettings.PopulateFromServerAsync(_client);
             };
 
             win.ShowDialog();

@@ -57,13 +57,13 @@ jobs:
           "$($hash.Hash)  Codeagogo-win-x64.zip" | Out-File checksums-sha256.txt
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Codeagogo-win-x64
           path: Codeagogo-win-x64.zip
 
       - name: Upload checksums
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: checksums
           path: checksums-sha256.txt

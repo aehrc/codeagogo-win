@@ -459,21 +459,18 @@ public class CodeSystemSettingsTests
     #region CodeSystemSettings Tests
 
     [Fact]
-    public void CodeSystemSettings_DefaultSystems_ContainsExpectedSystems()
+    public void CodeSystemSettings_DefaultSystems_ContainsOnlySNOMED()
     {
         // Arrange & Act
         var settings = new CodeSystemSettings();
 
-        // Assert
-        settings.Systems.Should().HaveCount(4);
-        settings.Systems.Should().Contain(s => s.Uri == "http://snomed.info/sct");
-        settings.Systems.Should().Contain(s => s.Uri == "http://loinc.org");
-        settings.Systems.Should().Contain(s => s.Uri == "http://hl7.org/fhir/sid/icd-10");
-        settings.Systems.Should().Contain(s => s.Uri == "http://www.nlm.nih.gov/research/umls/rxnorm");
+        // Assert — other systems are populated from the FHIR server on first launch
+        settings.Systems.Should().ContainSingle()
+            .Which.Uri.Should().Be("http://snomed.info/sct");
     }
 
     [Fact]
-    public void CodeSystemSettings_DefaultSystems_OnlySNOMEDEnabled()
+    public void CodeSystemSettings_DefaultSystems_SNOMEDEnabled()
     {
         // Arrange & Act
         var settings = new CodeSystemSettings();
@@ -481,9 +478,6 @@ public class CodeSystemSettingsTests
         // Assert
         var snomedSystem = settings.Systems.First(s => s.Uri == "http://snomed.info/sct");
         snomedSystem.Enabled.Should().BeTrue();
-
-        var otherSystems = settings.Systems.Where(s => s.Uri != "http://snomed.info/sct");
-        otherSystems.Should().AllSatisfy(s => s.Enabled.Should().BeFalse());
     }
 
     [Fact]

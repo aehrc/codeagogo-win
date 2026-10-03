@@ -5,6 +5,11 @@ All notable changes to Codeagogo (Windows) are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+- Updated ecl-core and ecl-editor to 1.6.1 (from 1.0.1). ECL Workbench concept search suggestions now appear reliably while typing, and correct completion icons are shown
+- ECL formatting no longer changes the meaning of expressions with constraint operators on attribute names, alternate identifiers (e.g. `LOINC#54486-6`), `<`/`>` concrete value comparisons, member field selection, or `OR` between refinement attributes
+- `!!>` (top of set) and `!!<` (bottom of set) are now recognised instead of being treated as descendant-of
+- ECL evaluation correctly handles `|` term annotations and description filters
+- Updated unit tests for the server-populated default code system list
 
 ## [1.0.4] - 2026-04-01
 
